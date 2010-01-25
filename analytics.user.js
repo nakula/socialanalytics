@@ -4,14 +4,13 @@
 // @description    Social numbers for Google Analytics in Top Content section of the analytics
 // @include        https://www.google.com/analytics/reporting/*
 // @require        http://ajax.googleapis.com/ajax/libs/jquery/1.3/jquery.js
+// @require				 http://pajhome.org.uk/crypt/md5/md5.js
 // ==/UserScript==
 
 function myjob() {
-	$('#f_column_5').after("<th class=\"goog-control goog-control-hover\" id=\"f_column_6\" style=\"-moz-user-select: none;\"> <div class=\"column_header\">Tweets</div> </th>");
-	$('#f_column_6').after("<th class=\"goog-control goog-control-hover\" id=\"f_column_7\" style=\"-moz-user-select: none;\"> <div class=\"column_header\">Diggs</div> </th>");
-	$('#f_column_7').after("<th class=\"goog-control goog-control-hover\" id=\"f_column_8\" style=\"-moz-user-select: none;\"> <div class=\"column_header\">Reddit</div> </th>");
-	$('#f_column_8').after("<th class=\"goog-control goog-control-hover\" id=\"f_column_9\" style=\"-moz-user-select: none;\"> <div class=\"column_header\">Facebook</div> </th>");
-	$('#f_column_9').after("<th class=\"goog-control goog-control-hover\" id=\"f_column_10\" style=\"-moz-user-select: none;\"> <div class=\"column_header\">Stumbleupon</div> </th>");
+	$.each(['Tweets', 'diggs', 'Reddit(U,D)', 'Facebook(S,L,C)', 'Stumbleupon', 'Delicious', 'Sphinn'], function(i, val){
+		$('#f_column_'+(5+i)).after("<th class=\"goog-control goog-control-hover\" id=\"f_column_" + (6+i) + "\" style=\"-moz-user-select: none;\"> <div class=\"column_header\">" + val + "</div> </th>");
+	});
 
 	$.each($("tbody[id^='f_tbody'] .text a[target='GA_LINKER']"), function(i, val) {
 		$(val).parent().parent().parent().parent().append("<td id=\"f_cell_" + (i+1) + "_6\"></td>");
@@ -58,7 +57,6 @@ function myjob() {
 		
 		//http://www.stumbleupon.com/url/www.quarkbase.com
 		$(val).parent().parent().parent().parent().append("<td id=\"f_cell_" + (i+1) + "_10\"></td>");
-		GM_log("http://www.stumbleupon.com/url/" + val.href.replace('http://',''));
 		GM_xmlhttpRequest({
 			method: 'GET',
 			url: "http://www.stumbleupon.com/url/" + val.href.replace('http://',''),
@@ -69,6 +67,27 @@ function myjob() {
 				$("#f_cell_" + (i+1) + "_10").html((views == null ? 0 : views[3]) + ", " + (reviews == null ? 0 : reviews[2]));
 			}
 		});
+		
+		$(val).parent().parent().parent().parent().append("<td id=\"f_cell_" + (i+1) + "_11\"></td>");
+		GM_xmlhttpRequest({
+			method: 'GET',
+			url: "http://feeds.delicious.com/v2/json/urlinfo/data?hash=" + hex_md5(val.href),
+			onload: function(response) {
+				var data = eval("(" + response.responseText + ")");
+				$("#f_cell_" + (i+1) + "_11").html(data.length == null ? 0 : data[0].total_posts);
+			}
+		});
+
+		$(val).parent().parent().parent().parent().append("<td id=\"f_cell_" + (i+1) + "_12\"></td>");
+		GM_xmlhttpRequest({
+			method: 'GET',
+			url: "http://sphinn.com/evb/url.php?url=" + encodeURIComponent(val.href),
+			onload: function(response) {
+				var data = response.responseText.match(/<b>(\d+)<\/b>/);
+				$("#f_cell_" + (i+1) + "_12").html(data == null ? 0 : data[1]);
+			}
+		});
+		
 	});
 
 	if ($('.dashboard_intro').length > 0) {
